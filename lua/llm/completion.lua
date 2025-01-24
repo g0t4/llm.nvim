@@ -187,6 +187,7 @@ function M.accept_line()
       table.remove(M.suggestion, 1)
       -- TODO refresh display of suggestion
       -- M.shown_suggestion = -- entire result, just leave it all intact as I dont care right now
+      -- TODO fix offset issue with cursor to new line
       show_extmark(M.suggestion, line_num_new, col_num_new)
     else
       M.suggestion = nil
