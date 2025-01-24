@@ -67,7 +67,9 @@ function M.schedule()
   end)
 end
 
+
 function show_extmark(lines, line_num, col_num)
+  clear_preview() -- clear extmark ns
   if lines == nil then
     print("wth... M.suggestion is nil, inexplicably")
     return
