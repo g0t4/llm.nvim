@@ -67,7 +67,6 @@ function M.schedule()
   end)
 end
 
-
 function show_extmark(lines, line_num, col_num)
   clear_preview() -- clear extmark ns
   if lines == nil then
@@ -169,9 +168,12 @@ function M.accept_line()
     -- rest of lines are inserted after current line
 
     -- "" is for second (new) line... and this just works!
-    local accepted_line = { M.suggestion[1], "" }
-    -- PRN how do I trigger the tab indent thingy? DO I EVEN WANT IT HERE? retry this as is when I get suggestion to refresh
-    --    IIRC vscode moves to start of new line BTW... col 0
+    local accepted_line = { M.suggestion[1] }
+    if #M.suggestion > 1 then
+      -- only add "" for new line if there are more lines in suggestion
+      -- DO NOT add "" if this is the last line, b/c it may be a partially completed line and need to be able to finish it
+      table.insert(accepted_line, "")
+    end
 
     -- insert line(s)
     api.nvim_buf_set_lines(0, r - 1, r, false, accepted_line)
@@ -190,13 +192,12 @@ function M.accept_line()
       -- TODO refresh display of suggestion
       -- M.shown_suggestion = -- entire result, just leave it all intact as I dont care right now
       -- TODO fix offset issue with cursor to new line
-      show_extmark(M.suggestion, line_num_new, col_num_new)
+      show_extmark(M.suggestion, line_num_new - 1, col_num_new)
     else
       M.suggestion = nil
       M.shown_suggestion = nil
+      signal_new_completion()
     end
-
-
   end
 end
 
@@ -212,6 +213,20 @@ function M.toggle_suggestion()
   vim.notify("[LLM] Auto suggestions are " .. state, vim.log.levels.INFO)
 end
 
+function signal_new_completion()
+  if M.suspend_cursor_moved then
+    -- THIS HAS TO BE FIXED... HOW CAN I disable this autocmd itself, temporarily? this is just luck to test this:
+    M.suspend_cursor_moved = false
+    return
+  end
+  if M.should_complete() then
+    M.schedule()
+  else
+    M.reject()
+    M.suggestion = nil
+  end
+end
+
 function M.create_autocmds()
   api.nvim_create_augroup(augroup, { clear = true })
 
@@ -219,19 +234,7 @@ function M.create_autocmds()
 
   api.nvim_create_autocmd("CursorMovedI", {
     pattern = config.get().enable_suggestions_on_files,
-    callback = function()
-      if M.suspend_cursor_moved then
-          -- THIS HAS TO BE FIXED... HOW CAN I disable this autocmd itself, temporarily? this is just luck to test this:
-          M.suspend_cursor_moved = false
-        return
-      end
-      if M.should_complete() then
-        M.schedule()
-      else
-        M.reject()
-        M.suggestion = nil
-      end
-    end,
+    callback = signal_new_completion,
   })
 end
 
