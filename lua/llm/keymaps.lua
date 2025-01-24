@@ -12,6 +12,13 @@ local function accept_suggestion()
   vim.schedule(completion.complete)
 end
 
+local function accept_partial_suggestion()
+  if not completion.suggestion then
+    return
+  end
+  vim.schedule(completion.partial_complete)
+end
+
 local function dismiss_suggestion()
   if not completion.suggestion then
     return
@@ -28,11 +35,16 @@ function M.setup()
   end
 
   local accept_keymap = config.get().accept_keymap
+  local accept_partial_keymap = config.get().accept_partial_keymap
   local dismiss_keymap = config.get().dismiss_keymap
 
   vim.keymap.set("i", accept_keymap, accept_suggestion, { expr = true })
 
   vim.keymap.set("n", accept_keymap, accept_suggestion, { expr = true })
+
+  vim.keymap.set("i", accept_partial_keymap, accept_partial_suggestion, { expr = true })
+
+  vim.keymap.set("n", accept_partial_keymap, accept_partial_suggestion, { expr = true })
 
   vim.keymap.set("i", dismiss_keymap, dismiss_suggestion, { expr = true })
 

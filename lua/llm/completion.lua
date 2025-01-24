@@ -123,7 +123,7 @@ function M.complete()
     llm_ls.accept_completion(M.shown_suggestion)
 
     -- reset to no suggestion (along with M.cancel() above)
-    M.shown_suggestion = nil
+    M.shown_suggestion = nil -- FYI this is only used for sending to server in info log after accept
     M.suggestion = nil
   end
 end
@@ -143,18 +143,20 @@ function M.partial_complete()
     M.suggestion[1] = utils.insert_at(line, c + 1, M.suggestion[1])
     -- rest of lines are inserted after current line
 
+    local accepted_line = {M.suggestion[1] }
+
     -- insert line(s)
-    api.nvim_buf_set_lines(0, r - 1, r, false, M.suggestion)
+    api.nvim_buf_set_lines(0, r - 1, r, false, accepted_line)
 
     -- move cursor position
-    local row_offset, col_offset = new_cursor_pos(M.suggestion, r)
+    local row_offset, col_offset = new_cursor_pos(accepted_line, r)
     api.nvim_win_set_cursor(0, { row_offset, col_offset })
 
     -- tell LLM accepted completion (just for info logging)
     -- llm_ls.accept_completion(M.shown_suggestion)
 
-    --
-    M.shown_suggestion = nil
+    -- TODO remove first line from M.suggestion and update shown_suggestion
+    -- M.shown_suggestion = nil
     -- M.suggestion = nil
 
   end
