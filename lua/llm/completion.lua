@@ -133,6 +133,15 @@ function M.accept_word()
 end
 
 function M.accept_line()
+  -- TODO BEHAVIORS:
+  -- - single line suggestion => move cursor to end of current line
+  -- - multi line suggest => accept line moves cursor to end of current line (first), then for subsequent lines it moves to start of next line
+  --    try this in vscode, it feels right how its done there
+  --    I might want accept line to always go to next line though?? thoughts (I don't like the accept line => end of line => accept line => next line start => accept line => next2 line start
+  -- - accept word => moves cursor to end of inserted word (right after)
+  -- HOLD DOWN:
+  --   I WANT TO BE ABLE TO HOLD DOWN accept word (alt+right) and have it machine gun its way through, blocking on each part of course (milliseconds of blocking of course)
+  --   I MAY  want the same for lines though thats gonna be less important as usually few lines suggested
 
   M.cancel() -- TODO verify - IIAC this safe to use w/ partial completions or would this nuke anything?
 
