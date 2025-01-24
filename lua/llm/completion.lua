@@ -113,22 +113,22 @@ function M.complete()
   M.cancel()
 
   if M.suggestion ~= nil then
-    local cursor_row_num, cursor_col_num = utils.get_cursor_pos()
-    local line = api.nvim_buf_get_lines(0, cursor_row_num - 1, cursor_row_num, false)[1]
+    local original_row, original_col = utils.get_cursor_pos()
+    local line = api.nvim_buf_get_lines(0, original_row - 1, original_row, false)[1]
 
     -- rebuild the current line w/ the suggestion
-    M.suggestion[1] = utils.insert_at(line, cursor_col_num + 1, M.suggestion[1])
+    M.suggestion[1] = utils.insert_at(line, original_col + 1, M.suggestion[1])
     -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
     -- rest of lines are inserted after current line
 
     -- determine new cursor position based on all added line(s) => set to length of last line inserted
-    local new_row_num, new_col_num = new_cursor_pos(M.suggestion, cursor_row_num)
+    local new_row, new_col = new_cursor_pos(M.suggestion, original_row)
 
     -- insert suggestion line(s) ... remember first line is merged w/ original, thus r-1 here to get rid of original line
-    api.nvim_buf_set_lines(0, cursor_row_num - 1, cursor_row_num, false, M.suggestion)
+    api.nvim_buf_set_lines(0, original_row - 1, original_row, false, M.suggestion)
 
     -- move cursor
-    api.nvim_win_set_cursor(0, { new_row_num, new_col_num })
+    api.nvim_win_set_cursor(0, { new_row, new_col })
 
     -- tell LLM accepted completion (just for info logging)
     llm_ls.accept_completion(M.shown_suggestion)
@@ -153,18 +153,22 @@ function M.accept_line()
   -- HOLD DOWN:
   --   I WANT TO BE ABLE TO HOLD DOWN accept word (alt+right) and have it machine gun its way through, blocking on each part of course (milliseconds of blocking of course)
   --   I MAY  want the same for lines though thats gonna be less important as usually few lines suggested
+  --
+  --   TODO issue deleting when renaming... error
+  --
+  --   ALSO: if holding down accept word and you want to move the cursor back up (to previous line) then you
 
   M.cancel() -- TODO verify - IIAC this safe to use w/ partial completions or would this nuke anything?
 
   -- start with taking a line/word
   -- NOT CANCEL IT
   if M.suggestion ~= nil then
-    local r, c = utils.get_cursor_pos()
-    local line = api.nvim_buf_get_lines(0, r - 1, r, false)[1]
+    local original_row, original_col = utils.get_cursor_pos()
+    local line = api.nvim_buf_get_lines(0, original_row - 1, original_row, false)[1]
 
     -- rebuild the current line w/ the suggestion
     -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
-    M.suggestion[1] = utils.insert_at(line, c + 1, M.suggestion[1])
+    M.suggestion[1] = utils.insert_at(line, original_col + 1, M.suggestion[1])
     -- rest of lines are inserted after current line
 
     -- "" is for second (new) line... and this just works!
@@ -176,13 +180,13 @@ function M.accept_line()
     end
 
     -- insert line(s)
-    api.nvim_buf_set_lines(0, r - 1, r, false, accepted_line)
+    api.nvim_buf_set_lines(0, original_row - 1, original_row, false, accepted_line)
 
     -- move cursor position
-    local line_num_new, col_num_new = new_cursor_pos(accepted_line, r)
+    local new_row, new_col = new_cursor_pos(accepted_line, original_row)
     -- SHIT CALLBACK IS ASYNC.... GODDAMMIT
     M.suspend_cursor_moved = true -- TODO DO NOT TRIGGER NEW SUGGESTION!!!
-    api.nvim_win_set_cursor(0, { line_num_new, col_num_new })
+    api.nvim_win_set_cursor(0, { new_row, new_col })
 
     -- tell LLM accepted completion (just for info logging)
     -- llm_ls.accept_completion(M.shown_suggestion)
@@ -191,8 +195,7 @@ function M.accept_line()
       table.remove(M.suggestion, 1)
       -- TODO refresh display of suggestion
       -- M.shown_suggestion = -- entire result, just leave it all intact as I dont care right now
-      -- TODO fix offset issue with cursor to new line
-      show_extmark(M.suggestion, line_num_new - 1, col_num_new)
+      show_extmark(M.suggestion, new_row - 1, new_col) -- TODO why again do I need new_row - 1 here? I know w/o it after first line accepted it shows extmark on following line (blank line)
     else
       M.suggestion = nil
       M.shown_suggestion = nil
