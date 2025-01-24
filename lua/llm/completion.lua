@@ -67,7 +67,7 @@ function M.schedule()
   end)
 end
 
-function show_extmark(lines, col_num, row_num)
+function show_extmark(lines, line_num, col_num)
   if lines == nil then
     print("wth... M.suggestion is nil, inexplicably")
     return
@@ -82,7 +82,7 @@ function show_extmark(lines, col_num, row_num)
       extmark.virt_lines[i - 1] = { { lines[i], M.hl_group } }
     end
   end
-  api.nvim_buf_set_extmark(0, M.ns_id, row_num, col_num, extmark)
+  api.nvim_buf_set_extmark(0, M.ns_id, line_num, col_num, extmark)
 end
 
 function M.lsp_suggest()
@@ -99,10 +99,10 @@ function M.lsp_suggest()
       return
     end
     M.suggestion = lines
-    local col = context.params.position.character
-    local line = context.params.position.line
+    local col_num = context.params.position.character
+    local line_num = context.params.position.line
 
-    show_extmark(lines, col, line)
+    show_extmark(lines, line_num, col_num)
 
     M.shown_suggestion = result
   end)
@@ -175,10 +175,10 @@ function M.accept_line()
     api.nvim_buf_set_lines(0, r - 1, r, false, accepted_line)
 
     -- move cursor position
-    local row_offset, col_offset = new_cursor_pos(accepted_line, r)
+    local line_num_new, col_num_new = new_cursor_pos(accepted_line, r)
+    -- SHIT CALLBACK IS ASYNC.... GODDAMMIT
     M.suspend_cursor_moved = true -- TODO DO NOT TRIGGER NEW SUGGESTION!!!
-    api.nvim_win_set_cursor(0, { row_offset, col_offset })
-    M.suspend_cursor_moved = false
+    api.nvim_win_set_cursor(0, { line_num_new, col_num_new })
 
     -- tell LLM accepted completion (just for info logging)
     -- llm_ls.accept_completion(M.shown_suggestion)
@@ -187,10 +187,13 @@ function M.accept_line()
       table.remove(M.suggestion, 1)
       -- TODO refresh display of suggestion
       -- M.shown_suggestion = -- entire result, just leave it all intact as I dont care right now
+      show_extmark(M.suggestion, line_num_new, col_num_new)
     else
       M.suggestion = nil
       M.shown_suggestion = nil
     end
+
+
   end
 end
 
@@ -215,6 +218,8 @@ function M.create_autocmds()
     pattern = config.get().enable_suggestions_on_files,
     callback = function()
       if M.suspend_cursor_moved then
+          -- THIS HAS TO BE FIXED... HOW CAN I disable this autocmd itself, temporarily? this is just luck to test this:
+          M.suspend_cursor_moved = false
         return
       end
       if M.should_complete() then
