@@ -141,6 +141,51 @@ end
 
 function M.accept_word()
   print("TODO ME PLEASE")
+
+  M.cancel() -- TODO verify - IIAC this safe to use w/ partial completions or would this nuke anything?
+
+  -- start with taking a line/word
+  -- NOT CANCEL IT
+  if M.suggestion ~= nil then
+    local original_row, original_col = utils.get_cursor_pos()
+    local line = api.nvim_buf_get_lines(0, original_row - 1, original_row, false)[1]
+
+    -- rebuild the current line w/ the suggestion
+    -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
+    M.suggestion[1] = utils.insert_at(line, original_col + 1, M.suggestion[1])
+    -- rest of lines are inserted after current line
+
+    -- "" is for second (new) line... and this just works!
+    local accepted_line = { M.suggestion[1] }
+    if #M.suggestion > 1 then
+      -- only add "" for new line if there are more lines in suggestion
+      -- DO NOT add "" if this is the last line, b/c it may be a partially completed line and need to be able to finish it
+      table.insert(accepted_line, "")
+    end
+
+    -- insert line(s)
+    api.nvim_buf_set_lines(0, original_row - 1, original_row, false, accepted_line)
+
+    -- move cursor position
+    local new_row, new_col = new_cursor_pos(accepted_line, original_row)
+    -- SHIT CALLBACK IS ASYNC.... GODDAMMIT
+    M.suspend_cursor_moved = true -- TODO DO NOT TRIGGER NEW SUGGESTION!!!
+    api.nvim_win_set_cursor(0, { new_row, new_col })
+
+    -- tell LLM accepted completion (just for info logging)
+    -- llm_ls.accept_completion(M.shown_suggestion)
+
+    if #M.suggestion > 1 then
+      table.remove(M.suggestion, 1)
+      -- TODO refresh display of suggestion
+      -- M.shown_suggestion = -- entire result, just leave it all intact as I dont care right now
+      show_extmark(M.suggestion, new_row - 1, new_col) -- TODO why again do I need new_row - 1 here? I know w/o it after first line accepted it shows extmark on following line (blank line)
+    else
+      M.suggestion = nil
+      M.shown_suggestion = nil
+      signal_new_completion()
+    end
+  end
 end
 
 function M.accept_line()
