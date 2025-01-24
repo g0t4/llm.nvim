@@ -110,17 +110,28 @@ function M.complete()
     -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
     -- rest of lines are inserted after current line
 
+    -- determine new cursor position based on all added line(s) => set to length of last line inserted
     local row_offset, col_offset = new_cursor_pos(M.suggestion, r)
+
+    -- insert suggestion line(s) ... remember first line is merged w/ original, thus r-1 here to get rid of original line
     api.nvim_buf_set_lines(0, r - 1, r, false, M.suggestion)
+
+    -- move cursor
     api.nvim_win_set_cursor(0, { row_offset, col_offset })
 
+    -- tell LLM accepted completion (just for info logging)
     llm_ls.accept_completion(M.shown_suggestion)
+
+    -- reset to no suggestion (along with M.cancel() above)
     M.shown_suggestion = nil
     M.suggestion = nil
   end
 end
 
 function M.partial_complete()
+
+  M.cancel() -- TODO verify - IIAC this safe to use w/ partial completions or would this nuke anything?
+
   -- start with taking a line/word
   -- NOT CANCEL IT
   if M.suggestion ~= nil then
@@ -132,13 +143,19 @@ function M.partial_complete()
     M.suggestion[1] = utils.insert_at(line, c + 1, M.suggestion[1])
     -- rest of lines are inserted after current line
 
-    local row_offset, col_offset = new_cursor_pos(M.suggestion, r)
+    -- insert line(s)
     api.nvim_buf_set_lines(0, r - 1, r, false, M.suggestion)
+
+    -- move cursor position
+    local row_offset, col_offset = new_cursor_pos(M.suggestion, r)
     api.nvim_win_set_cursor(0, { row_offset, col_offset })
 
-    llm_ls.accept_completion(M.shown_suggestion)
+    -- tell LLM accepted completion (just for info logging)
+    -- llm_ls.accept_completion(M.shown_suggestion)
+
+    --
     M.shown_suggestion = nil
-    M.suggestion = nil
+    -- M.suggestion = nil
 
   end
 end
