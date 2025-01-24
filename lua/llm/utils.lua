@@ -65,14 +65,18 @@ end
 function M.insert_at(dst, at, src)
   at = math.max(1, math.min(at, #dst + 1))
 
+  -- split current line (before cursor, after cursor)
   local before = string.sub(dst, 1, at - 1)
   local after = string.sub(dst, at)
 
+  -- insert suggestion at split(cursor position)
   local result = before .. src
   if not M.ends_with(src, after) then
+    -- only include after if it wasn't at the end of the suggestion (FITM)
     result = result .. after
   end
 
+  -- completion ends with after, so we don't need to add it (twice)
   return result
 end
 
