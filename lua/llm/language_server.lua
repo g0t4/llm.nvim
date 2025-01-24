@@ -155,6 +155,7 @@ function M.accept_completion(completion_result)
   params.completions = completion_result.completions
   local client = lsp.get_client_by_id(M.client_id)
   if client ~= nil then
+    -- AFAICT server side just write an info log and that is it
     local status, _ = client.request("llm-ls/acceptCompletion", params, function() end, 0)
 
     if not status then
@@ -169,6 +170,7 @@ function M.reject_completion(completion_result)
   params.shownCompletions = { 0 }
   local client = lsp.get_client_by_id(M.client_id)
   if client ~= nil then
+    -- AFAICT server side just write an info log and that is it
     local status, _ = client.request("llm-ls/rejectCompletion", params, function() end, 0)
 
     if not status then
