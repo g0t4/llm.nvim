@@ -164,13 +164,19 @@ function M.accept_line()
     -- move cursor position
     local row_offset, col_offset = new_cursor_pos(accepted_line, r)
     api.nvim_win_set_cursor(0, { row_offset, col_offset })
+    -- TODO DO NOT TRIGGER NEW SUGGESTION!!!
 
     -- tell LLM accepted completion (just for info logging)
     -- llm_ls.accept_completion(M.shown_suggestion)
 
-    -- TODO remove first line from M.suggestion and update shown_suggestion
-    -- M.shown_suggestion = nil
-    -- M.suggestion = nil
+    if #M.suggestion > 1 then
+      table.remove(M.suggestion, 1)
+      -- TODO refresh display of suggestion
+      -- M.shown_suggestion = -- entire result, just leave it all intact as I dont care right now
+    else
+      M.suggestion = nil
+      M.shown_suggestion = nil
+    end
 
   end
 end
