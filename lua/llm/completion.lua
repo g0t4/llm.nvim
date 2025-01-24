@@ -83,17 +83,22 @@ function M.lsp_suggest()
     M.suggestion = lines
     local col = context.params.position.character
     local line = context.params.position.line
-    local extmark = {
-      virt_text_win_col = col,
-      virt_text = { { lines[1], M.hl_group } },
-    }
-    if #lines > 1 then
-      extmark.virt_lines = {}
-      for i = 2, #lines do
-        extmark.virt_lines[i - 1] = { { lines[i], M.hl_group } }
+
+    function show_extmark()
+      local extmark = {
+        virt_text_win_col = col,
+        virt_text = { { lines[1], M.hl_group } },
+      }
+      if #lines > 1 then
+        extmark.virt_lines = {}
+        for i = 2, #lines do
+          extmark.virt_lines[i - 1] = { { lines[i], M.hl_group } }
+        end
       end
+      api.nvim_buf_set_extmark(0, M.ns_id, line, col, extmark)
     end
-    api.nvim_buf_set_extmark(0, M.ns_id, line, col, extmark)
+    show_extmark()
+
     M.shown_suggestion = result
   end)
 end
