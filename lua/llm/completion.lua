@@ -156,7 +156,10 @@ function M.accept_line()
     M.suggestion[1] = utils.insert_at(line, c + 1, M.suggestion[1])
     -- rest of lines are inserted after current line
 
-    local accepted_line = {M.suggestion[1] }
+    -- "" is for second (new) line... and this just works!
+    local accepted_line = {M.suggestion[1], "" }
+    -- PRN how do I trigger the tab indent thingy? DO I EVEN WANT IT HERE? retry this as is when I get suggestion to refresh
+    --    IIRC vscode moves to start of new line BTW... col 0
 
     -- insert line(s)
     api.nvim_buf_set_lines(0, r - 1, r, false, accepted_line)
