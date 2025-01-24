@@ -139,35 +139,60 @@ function M.complete()
   end
 end
 
+local function get_next_word(line)
+  if line == nil or line == "" then
+    return "", nil
+  end
+
+  -- FYI don't accept space as a word... so take until next word starts? this will happen b/c I stop before space... so next accept will be space + next word
+  --    (perfect)... I want space before next word, not after current word
+  -- alway starts at 1 and then just a matter of how far to go
+  local _, ends_at = line:find("[_%w]+")
+  if ends_at == nil then
+    -- assume entire line is next word, take it all
+    return line, nil
+  end
+
+  local word = line:sub(1, ends_at) or ""
+  local rest = line:sub(ends_at + 1) or ""
+  return word, rest
+end
+
+-- FYI, for testing... usually returns a few words on first line only, to test wrap logic
+-- function foo
+
 function M.accept_word()
-  print("TODO ME PLEASE")
+  M.cancel()
 
-  M.cancel() -- TODO verify - IIAC this safe to use w/ partial completions or would this nuke anything?
-
-  -- start with taking a line/word
-  -- NOT CANCEL IT
+  -- get next word from suggestion (or just the rest of suggestion if no more words
   if M.suggestion ~= nil then
     local original_row, original_col = utils.get_cursor_pos()
     local line = api.nvim_buf_get_lines(0, original_row - 1, original_row, false)[1]
 
-    -- rebuild the current line w/ the suggestion
-    -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
-    M.suggestion[1] = utils.insert_at(line, original_col + 1, M.suggestion[1])
-    -- rest of lines are inserted after current line
+    -- rebuild the current line w/ next word
+    -- PRN address issue with overlap (FITM)... which is wrong in most of the above anyways so ignore it for now (ASSUME completing end of line only)
+    local next_word, rest = get_next_word(M.suggestion[1])
+    print("next_word:", next_word, "rest:", rest)
 
-    -- "" is for second (new) line... and this just works!
-    local accepted_line = { M.suggestion[1] }
-    if #M.suggestion > 1 then
-      -- only add "" for new line if there are more lines in suggestion
-      -- DO NOT add "" if this is the last line, b/c it may be a partially completed line and need to be able to finish it
-      table.insert(accepted_line, "")
+    -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
+    local new_line = line .. next_word
+    M.suggestion[1] = rest
+    local accepted_lines = { new_line }
+    if rest == nil or rest == "" then
+      -- that line is done, move on
+      if #M.suggestion > 1 then
+        -- AND there are more lines left in suggestion
+        -- "" is for second (new) line... and this just works!
+        table.insert(accepted_lines, "")
+      end
+      table.remove(M.suggestion, 1)
     end
 
     -- insert line(s)
-    api.nvim_buf_set_lines(0, original_row - 1, original_row, false, accepted_line)
+    api.nvim_buf_set_lines(0, original_row - 1, original_row, false, accepted_lines)
 
     -- move cursor position
-    local new_row, new_col = new_cursor_pos(accepted_line, original_row)
+    local new_row, new_col = new_cursor_pos(accepted_lines, original_row)
     -- SHIT CALLBACK IS ASYNC.... GODDAMMIT
     M.suspend_cursor_moved = true -- TODO DO NOT TRIGGER NEW SUGGESTION!!!
     api.nvim_win_set_cursor(0, { new_row, new_col })
@@ -175,9 +200,8 @@ function M.accept_word()
     -- tell LLM accepted completion (just for info logging)
     -- llm_ls.accept_completion(M.shown_suggestion)
 
+    -- show extmark(s
     if #M.suggestion > 1 then
-      table.remove(M.suggestion, 1)
-      -- TODO refresh display of suggestion
       -- M.shown_suggestion = -- entire result, just leave it all intact as I dont care right now
       show_extmark(M.suggestion, new_row - 1, new_col) -- TODO why again do I need new_row - 1 here? I know w/o it after first line accepted it shows extmark on following line (blank line)
     else
