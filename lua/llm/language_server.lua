@@ -132,6 +132,7 @@ function M.get_completions(callback)
   params.ide = "neovim"
   params.disableUrlPathCompletion = config.get().disable_url_path_completion
 
+  M.wes_params = params
   local client = lsp.get_client_by_id(M.client_id)
   if client ~= nil then
     local status, request_id = client.request("llm-ls/getCompletions", params, callback, 0)

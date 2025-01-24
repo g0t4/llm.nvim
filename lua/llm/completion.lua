@@ -73,6 +73,7 @@ function M.lsp_suggest()
       vim.notify("[LLM] " .. err.message, vim.log.levels.ERROR)
       return
     end
+    M.wes_last_result = result
     local completions = result.completions
     local generated_text = llm_ls.extract_generation(completions)
     local lines = utils.split_str(generated_text, "\n")
