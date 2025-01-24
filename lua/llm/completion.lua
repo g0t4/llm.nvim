@@ -104,7 +104,12 @@ function M.complete()
   if M.suggestion ~= nil then
     local r, c = utils.get_cursor_pos()
     local line = api.nvim_buf_get_lines(0, r - 1, r, false)[1]
+
+    -- rebuild the current line w/ the suggestion
     M.suggestion[1] = utils.insert_at(line, c + 1, M.suggestion[1])
+    -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
+    -- rest of lines are inserted after current line
+
     local row_offset, col_offset = new_cursor_pos(M.suggestion, r)
     api.nvim_buf_set_lines(0, r - 1, r, false, M.suggestion)
     api.nvim_win_set_cursor(0, { row_offset, col_offset })
@@ -121,6 +126,8 @@ function M.partial_complete()
   if M.suggestion ~= nil then
     local r, c = utils.get_cursor_pos()
     local line = api.nvim_buf_get_lines(0, r - 1, r, false)[1]
+
+    -- rebuild the current line w/ the suggestion
     -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
     M.suggestion[1] = utils.insert_at(line, c + 1, M.suggestion[1])
     -- rest of lines are inserted after current line
