@@ -157,7 +157,7 @@ function M.accept_line()
     -- rest of lines are inserted after current line
 
     -- "" is for second (new) line... and this just works!
-    local accepted_line = {M.suggestion[1], "" }
+    local accepted_line = { M.suggestion[1], "" }
     -- PRN how do I trigger the tab indent thingy? DO I EVEN WANT IT HERE? retry this as is when I get suggestion to refresh
     --    IIRC vscode moves to start of new line BTW... col 0
 
@@ -181,7 +181,6 @@ function M.accept_line()
       M.suggestion = nil
       M.shown_suggestion = nil
     end
-
   end
 end
 
