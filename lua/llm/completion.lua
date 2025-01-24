@@ -163,8 +163,9 @@ function M.accept_line()
 
     -- move cursor position
     local row_offset, col_offset = new_cursor_pos(accepted_line, r)
+    M.suspend_cursor_moved = true -- TODO DO NOT TRIGGER NEW SUGGESTION!!!
     api.nvim_win_set_cursor(0, { row_offset, col_offset })
-    -- TODO DO NOT TRIGGER NEW SUGGESTION!!!
+    M.suspend_cursor_moved = false
 
     -- tell LLM accepted completion (just for info logging)
     -- llm_ls.accept_completion(M.shown_suggestion)
@@ -180,6 +181,8 @@ function M.accept_line()
 
   end
 end
+
+M.suspend_cursor_moved = false
 
 function M.should_complete()
   return M.suggestions_enabled
@@ -199,6 +202,9 @@ function M.create_autocmds()
   api.nvim_create_autocmd("CursorMovedI", {
     pattern = config.get().enable_suggestions_on_files,
     callback = function()
+      if M.suspend_cursor_moved then
+        return
+      end
       if M.should_complete() then
         M.schedule()
       else
