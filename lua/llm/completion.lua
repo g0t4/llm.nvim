@@ -67,6 +67,24 @@ function M.schedule()
   end)
 end
 
+function show_extmark(lines, col_num, row_num)
+  if lines == nil then
+    print("wth... M.suggestion is nil, inexplicably")
+    return
+  end
+  local extmark = {
+    virt_text_win_col = col_num,
+    virt_text = { { lines[1], M.hl_group } },
+  }
+  if #lines > 1 then
+    extmark.virt_lines = {}
+    for i = 2, #lines do
+      extmark.virt_lines[i - 1] = { { lines[i], M.hl_group } }
+    end
+  end
+  api.nvim_buf_set_extmark(0, M.ns_id, row_num, col_num, extmark)
+end
+
 function M.lsp_suggest()
   M.request_id = llm_ls.get_completions(function(err, result, context, _conf)
     if err ~= nil then
@@ -84,20 +102,7 @@ function M.lsp_suggest()
     local col = context.params.position.character
     local line = context.params.position.line
 
-    function show_extmark()
-      local extmark = {
-        virt_text_win_col = col,
-        virt_text = { { lines[1], M.hl_group } },
-      }
-      if #lines > 1 then
-        extmark.virt_lines = {}
-        for i = 2, #lines do
-          extmark.virt_lines[i - 1] = { { lines[i], M.hl_group } }
-        end
-      end
-      api.nvim_buf_set_extmark(0, M.ns_id, line, col, extmark)
-    end
-    show_extmark()
+    show_extmark(lines, col, line)
 
     M.shown_suggestion = result
   end)
