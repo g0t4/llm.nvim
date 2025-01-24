@@ -128,7 +128,11 @@ function M.complete()
   end
 end
 
-function M.partial_complete()
+function M.accept_word()
+  print("TODO ME PLEASE")
+end
+
+function M.accept_line()
 
   M.cancel() -- TODO verify - IIAC this safe to use w/ partial completions or would this nuke anything?
 

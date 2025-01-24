@@ -22,7 +22,8 @@ local default_config = {
   },
   debounce_ms = 150,
   accept_keymap = "<Tab>",
-  accept_partial_keymap = "<M-Right>", -- TODO line vs word accept (what is standard between the two, I am only familiar with alt+right and I think I use it diff in diff IDEs... )
+  accept_word_keymap = "<M-Right>", -- I am using this with supermaven
+  accept_line_keymap = "<C-Right>", -- zed had this set... fine by me then
   dismiss_keymap = "<S-Tab>",
   tls_skip_verify_insecure = false,
   ---@class llm_config_lsp
