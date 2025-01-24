@@ -113,22 +113,22 @@ function M.complete()
   M.cancel()
 
   if M.suggestion ~= nil then
-    local r, c = utils.get_cursor_pos()
-    local line = api.nvim_buf_get_lines(0, r - 1, r, false)[1]
+    local cursor_row_num, cursor_col_num = utils.get_cursor_pos()
+    local line = api.nvim_buf_get_lines(0, cursor_row_num - 1, cursor_row_num, false)[1]
 
     -- rebuild the current line w/ the suggestion
-    M.suggestion[1] = utils.insert_at(line, c + 1, M.suggestion[1])
+    M.suggestion[1] = utils.insert_at(line, cursor_col_num + 1, M.suggestion[1])
     -- only the first line needs to be inserted? (in between code?! for FITM in this line.. wouldn't that be an issue for next lines too?!) ... is that why they limit to single line if FITM?
     -- rest of lines are inserted after current line
 
     -- determine new cursor position based on all added line(s) => set to length of last line inserted
-    local row_offset, col_offset = new_cursor_pos(M.suggestion, r)
+    local new_row_num, new_col_num = new_cursor_pos(M.suggestion, cursor_row_num)
 
     -- insert suggestion line(s) ... remember first line is merged w/ original, thus r-1 here to get rid of original line
-    api.nvim_buf_set_lines(0, r - 1, r, false, M.suggestion)
+    api.nvim_buf_set_lines(0, cursor_row_num - 1, cursor_row_num, false, M.suggestion)
 
     -- move cursor
-    api.nvim_win_set_cursor(0, { row_offset, col_offset })
+    api.nvim_win_set_cursor(0, { new_row_num, new_col_num })
 
     -- tell LLM accepted completion (just for info logging)
     llm_ls.accept_completion(M.shown_suggestion)
