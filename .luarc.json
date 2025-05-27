@@ -1,7 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  // example: https://github.com/LuaLS/lua-language-server/blob/master/.luarc.json
   "diagnostics": {
-    "unusedLocalExclude": ["_*"]
+    "globals": [ "vim", "describe", "it", "assert" ],
+    "unusedLocalExclude": [ "_*" ]
   },
-  "diagnostics.globals": ["vim"]
+  "workspace.library": [
+    // todo? copy from my other projects? donn't prematurely do it though... next time you work on this llm.nvim repo
+  ],
 }
